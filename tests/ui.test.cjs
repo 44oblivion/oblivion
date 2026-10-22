@@ -220,3 +220,24 @@ test('theme preview never persists until Save and Cancel restores the saved page
     f.close();
   }
 });
+test('a closed-page theme preview can recover from an external settings revision without overwriting it', async () => {
+  const f = await fixture();
+  try {
+    f.shadow.querySelector('[data-view=appearance]').click();
+    await wait();
+    f.shadow.querySelector('[data-theme=noir]').click();
+    f.shadow.querySelector('[data-show-page]').click();
+    f.state.preferences.revision++;
+    f.state.preferences.appearance.volume = 0.3;
+    f.shadow.querySelector('.theme-preview-bar .primary').click();
+    await wait();
+    assert.equal(f.state.preferences.appearance.mode, 'original');
+    f.shadow.querySelector('.theme-preview-bar .primary').click();
+    await wait();
+    assert.equal(f.state.preferences.appearance.theme, 'noir');
+    assert.equal(f.state.preferences.appearance.volume, 0.3);
+    assert.deepEqual(f.errors, []);
+  } finally {
+    f.close();
+  }
+});

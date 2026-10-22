@@ -212,8 +212,12 @@
     };
   }
   function sanitizeCSS(value) {
-    return String(value || '')
+    const css = String(value || '')
       .slice(0, 30000)
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    // Reject escaped identifiers rather than allowing obfuscated remote URLs/imports.
+    if (css.includes('\\')) return '';
+    return css
       .replace(/@import[^;]*(;|$)/gi, '')
       .replace(/(?:url|(?:-webkit-)?image-set)\s*\([^;}]*/gi, 'none')
       .replace(/(?:https?:|javascript:|data:)/gi, 'blocked:');

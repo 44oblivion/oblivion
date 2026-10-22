@@ -67,3 +67,11 @@ test('theme collections normalize independently and reject oversized collections
     }),
   );
 });
+test('imported CSS cannot hide remote imports behind comments or escaped identifiers', () => {
+  assert.equal(T.sanitizeCSS(String.raw`body{background:u\72l(//example.invalid/pixel)}`), '');
+  const clean = T.sanitizeCSS(
+    '@im/**/port "//example.invalid/theme.css"; body{background:u/**/rl(//example.invalid/pixel);color:red}',
+  );
+  assert.ok(!clean.includes('example.invalid'));
+  assert.ok(clean.includes('color:red'));
+});
