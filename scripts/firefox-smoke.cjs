@@ -51,7 +51,12 @@ const fs = require('node:fs/promises'),
     const manifest = JSON.parse(await fs.readFile(path.join(extension, 'manifest.json'), 'utf8'));
     manifest.permissions.push('http://127.0.0.1/*');
     manifest.content_scripts[0].matches.push('http://127.0.0.1/*');
+    manifest.content_scripts[0].js.unshift('content/runtime-capture.js');
     manifest.content_scripts[0].js.push('content/runtime-test.js');
+    await fs.writeFile(
+      path.join(extension, 'content/runtime-capture.js'),
+      `globalThis.__oblivionRuntimeRoots=[];const originalAttachShadow=Element.prototype.attachShadow;Element.prototype.attachShadow=function(options){const root=originalAttachShadow.call(this,options);globalThis.__oblivionRuntimeRoots.push(root);return root;};`,
+    );
     await fs.writeFile(path.join(extension, 'manifest.json'), JSON.stringify(manifest));
     const html = await fs.readFile(path.join(extension, 'background/index.html'), 'utf8');
     await fs.writeFile(
@@ -64,7 +69,7 @@ const fs = require('node:fs/promises'),
     );
     await fs.writeFile(
       path.join(extension, 'content/runtime-test.js'),
-      `setTimeout(async()=>{const host=document.querySelector('#oblivion-workspace');await fetch(${JSON.stringify(origin + '/report')},{method:'POST',body:JSON.stringify(host?{kind:'content',ok:true,mounted:true}:{kind:'content',error:'Content workspace failed to mount'})});},1500);`,
+      `setTimeout(async()=>{const host=document.querySelector('#oblivion-workspace');const root=globalThis.__oblivionRuntimeRoots.find(r=>r.host===host);const ready=!!root?.querySelector('.dock')&&!root.querySelector('.toast');await fetch(${JSON.stringify(origin + '/report')},{method:'POST',body:JSON.stringify(ready?{kind:'content',ok:true,mounted:true,dockReady:true}:{kind:'content',error:'Content workspace failed to mount'})});},1500);`,
     );
     const webext = path.join(root, 'node_modules/web-ext/bin/web-ext.js');
     const firefox =
