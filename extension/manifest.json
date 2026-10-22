@@ -1,0 +1,61 @@
+{
+  "manifest_version": 2,
+  "name": "Oblivion",
+  "version": "0.1.0",
+  "description": "Независимые инструменты для FunPay: лоты, чаты, аналитика, AI и автоматизация.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "alarms",
+    "https://funpay.com/*",
+    "https://*.funpay.com/*",
+    "activeTab"
+  ],
+  "optional_permissions": [
+    "https://api.openai.com/*",
+    "https://openrouter.ai/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.telegram.org/*",
+    "https://discord.com/*"
+  ],
+  "icons": {
+    "32": "icons/oblivion-32.png",
+    "64": "icons/oblivion-64.png",
+    "128": "icons/oblivion.png"
+  },
+  "background": {
+    "page": "background/index.html",
+    "persistent": true
+  },
+  "browser_action": {
+    "default_title": "Oblivion",
+    "default_popup": "popup/index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://funpay.com/*", "https://*.funpay.com/*"],
+      "exclude_matches": ["https://support.funpay.com/*"],
+      "js": ["shared/core.js", "content/workspace.js", "content/page-tools.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": ["icons/oblivion.png", "content/workspace.css"],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "oblivion@44oblivion",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"],
+        "optional": [
+          "websiteContent",
+          "personalCommunications",
+          "authenticationInfo",
+          "personallyIdentifyingInfo",
+          "financialAndPaymentInfo"
+        ]
+      }
+    }
+  },
+  "author": "44oblivion",
+  "homepage_url": "https://github.com/44oblivion/oblivion"
+}
