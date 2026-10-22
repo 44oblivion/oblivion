@@ -50,7 +50,11 @@ async function fixture() {
               result = structuredClone(state);
               break;
             case 'settings':
+              if (message.payload.expectedRevision !== state.preferences.revision)
+                throw new Error('STALE_SETTINGS: updated externally');
+              const revision = state.preferences.revision + 1;
               state.preferences = C.normalize(C.merge(state.preferences, message.payload.patch));
+              state.preferences.revision = revision;
               result = structuredClone(state.preferences);
               break;
             case 'identity':
@@ -169,6 +173,21 @@ test('Escape closes the workspace and reopening remains functional', async () =>
     f.shadow.querySelector('.dock').click();
     await wait();
     assert.ok(f.shadow.querySelector('.shell'));
+  } finally {
+    f.close();
+  }
+});
+test('stale forms refresh instead of overwriting newer settings', async () => {
+  const f = await fixture();
+  try {
+    f.shadow.querySelector('[data-view=automation]').click();
+    await wait();
+    f.state.preferences.revision = 1;
+    f.shadow.querySelector('[name=bumpEnabled]').checked = true;
+    f.shadow.querySelector('[data-bump-save]').click();
+    await wait();
+    assert.equal(f.state.preferences.bump.enabled, false);
+    assert.match(f.shadow.querySelector('.toast').textContent, /обновились/);
   } finally {
     f.close();
   }

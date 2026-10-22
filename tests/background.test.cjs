@@ -387,3 +387,50 @@ test('a late inventory write cannot re-enable jobs after pause', async () => {
   await context.store.update({ inventories: prefs.inventories });
   assert.equal(data.preferences.inventories[0].enabled, false);
 });
+test('stale UI edits cannot restore inventory after a background delivery', async () => {
+  const prefs = C.defaults();
+  prefs.inventories = [
+    {
+      id: 's',
+      name: 'Stock',
+      enabled: true,
+      match: 'Game',
+      message: '{lot}',
+      items: ['one', 'two'],
+      reservations: [],
+    },
+  ];
+  const data = { preferences: prefs };
+  const context = vm.createContext({
+    OblivionCore: C,
+    structuredClone,
+    chrome: {
+      runtime: {},
+      storage: {
+        local: {
+          get(_keys, cb) {
+            cb(structuredClone(data));
+          },
+          set(values, cb) {
+            Object.assign(data, structuredClone(values));
+            cb();
+          },
+        },
+      },
+    },
+  });
+  vm.runInContext(read('storage.js') + '\nglobalThis.store=Store;', context);
+  const stale = structuredClone(prefs.inventories);
+  await context.store.update({
+    inventories: [
+      {
+        ...prefs.inventories[0],
+        items: ['two'],
+        reservations: [{ order: '42', value: 'one', status: 'delivered' }],
+      },
+    ],
+  });
+  await assert.rejects(context.store.update({ inventories: stale }, 0), /STALE_SETTINGS/);
+  assert.deepEqual(data.preferences.inventories[0].items, ['two']);
+  assert.equal(data.preferences.revision, 1);
+});

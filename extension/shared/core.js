@@ -3,6 +3,7 @@
   'use strict';
   const defaults = () => ({
     version: 1,
+    revision: 0,
     automationAccount: '',
     appearance: {
       mode: 'original',

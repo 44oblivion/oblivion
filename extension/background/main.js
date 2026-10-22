@@ -1,8 +1,8 @@
 'use strict';
 let settingsQueue = Promise.resolve();
 let timerQueue = Promise.resolve();
-const mutateSettings = (patch) => {
-  const job = settingsQueue.catch(() => {}).then(() => Store.update(patch));
+const mutateSettings = (patch, expectedRevision) => {
+  const job = settingsQueue.catch(() => {}).then(() => Store.update(patch, expectedRevision));
   settingsQueue = job;
   return job;
 };
@@ -12,10 +12,10 @@ const commands = {
     const { journal = [], automation = {} } = await Store.read(['journal', 'automation']);
     return { preferences: prefs, journal, automation };
   },
-  async settings({ patch }) {
+  async settings({ patch, expectedRevision }) {
     if (Engine.running && (patch?.inventories || patch?.rules || patch?.autoRestore))
       throw new Error('Фоновая операция выполняется. Повторите изменение через несколько секунд.');
-    return mutateSettings(patch);
+    return mutateSettings(patch, expectedRevision);
   },
   async identity() {
     const me = await FunPay.identity(true);

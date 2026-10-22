@@ -70,6 +70,7 @@
         tool('Сохранить', section, async () => {
           await call('settings', {
             patch: { notes: { ...state.preferences.notes, [profile[1]]: textarea.value } },
+            expectedRevision: state.preferences.revision,
           });
           box.remove();
         });

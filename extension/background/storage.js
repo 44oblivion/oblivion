@@ -20,11 +20,17 @@ const Store = {
     const { preferences } = await this.read('preferences');
     return OblivionCore.normalize(preferences || {});
   },
-  update(patch) {
+  update(patch, expectedRevision) {
     const job = preferenceQueue
       .catch(() => {})
       .then(async () => {
-        const value = OblivionCore.normalize(OblivionCore.merge(await this.settings(), patch));
+        const current = await this.settings();
+        if (expectedRevision !== undefined && expectedRevision !== current.revision)
+          throw new Error(
+            'STALE_SETTINGS: Данные изменились. Обновите панель и повторите действие.',
+          );
+        const value = OblivionCore.normalize(OblivionCore.merge(current, patch));
+        value.revision = current.revision + 1;
         if (typeof Engine !== 'undefined' && Engine.pauseRequested && Engine.running) {
           value.bump.enabled = false;
           value.autoRestore.enabled = false;

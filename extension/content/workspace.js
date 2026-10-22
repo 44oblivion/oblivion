@@ -85,7 +85,8 @@
     activeChat = '',
     dialog = null,
     historyType = 'orders';
-  let lastFocus = null;
+  let lastFocus = null,
+    renderedRevision = 0;
   const pages = [
     ['overview', '◒', 'Обзор'],
     ['chats', '◌', 'Чаты'],
@@ -116,8 +117,23 @@
     }
   }
   async function patch(value) {
-    state.preferences = await request('settings', { patch: value });
+    try {
+      state.preferences = await request('settings', {
+        patch: value,
+        expectedRevision: renderedRevision,
+      });
+    } catch (error) {
+      if (error.message.startsWith('STALE_SETTINGS:')) {
+        state = await request('state');
+        dialog?.remove();
+        dialog = null;
+        render();
+        throw new Error('Данные обновились. Панель перезагружена; повторите действие.');
+      }
+      throw error;
+    }
     applyAppearance();
+    render();
   }
   function close() {
     backdrop?.remove();
@@ -261,6 +277,7 @@
   }
   function render() {
     if (!backdrop) return;
+    renderedRevision = state.preferences.revision;
     backdrop
       .querySelectorAll('.nav')
       .forEach((el) => el.classList.toggle('active', el.dataset.view === view));
