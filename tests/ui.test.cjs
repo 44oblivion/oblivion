@@ -89,6 +89,7 @@ async function fixture() {
     permissions: { request: (_p, cb) => cb(true) },
   };
   w.eval(fs.readFileSync(path.join(__dirname, '../extension/shared/core.js'), 'utf8'));
+  w.eval(fs.readFileSync(path.join(__dirname, '../extension/shared/themes.js'), 'utf8'));
   w.eval(fs.readFileSync(path.join(__dirname, '../extension/content/workspace.js'), 'utf8'));
   await wait();
   shadow.querySelector('.dock').click();
@@ -188,6 +189,33 @@ test('stale forms refresh instead of overwriting newer settings', async () => {
     await wait();
     assert.equal(f.state.preferences.bump.enabled, false);
     assert.match(f.shadow.querySelector('.toast').textContent, /обновились/);
+  } finally {
+    f.close();
+  }
+});
+test('theme preview never persists until Save and Cancel restores the saved page', async () => {
+  const f = await fixture();
+  try {
+    f.shadow.querySelector('[data-view=appearance]').click();
+    await wait();
+    assert.equal(f.shadow.querySelectorAll('[data-theme]').length, 10);
+    f.shadow.querySelector('[data-theme=nebula]').click();
+    assert.equal(f.w.document.documentElement.dataset.oblivionTheme, 'dark');
+    assert.equal(f.state.preferences.appearance.mode, 'original');
+    f.shadow.querySelector('[data-cancel-theme]').click();
+    assert.equal(f.w.document.documentElement.dataset.oblivionTheme, undefined);
+    f.shadow.querySelector('[data-theme=porcelain]').click();
+    f.shadow.querySelector('[data-save-theme]').click();
+    await wait();
+    assert.equal(f.state.preferences.appearance.theme, 'porcelain');
+    assert.equal(f.w.document.documentElement.dataset.oblivionTheme, 'light');
+    f.shadow.querySelector('[data-theme=noir]').click();
+    f.shadow.querySelector('[data-show-page]').click();
+    assert.equal(f.shadow.querySelector('.shell'), null);
+    assert.ok(f.shadow.querySelector('.theme-preview-bar'));
+    f.shadow.querySelector('.theme-preview-bar .quiet').click();
+    assert.equal(f.w.document.documentElement.dataset.oblivionTheme, 'light');
+    assert.deepEqual(f.errors, []);
   } finally {
     f.close();
   }

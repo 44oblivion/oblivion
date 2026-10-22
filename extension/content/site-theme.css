@@ -1,0 +1,380 @@
+/* Original theme coverage for the public FunPay layout. Never changes table display/column geometry. */
+html[data-oblivion-theme] {
+  color-scheme: dark;
+  background: var(--ob-bg) !important;
+  scroll-padding-top: 80px;
+}
+html[data-oblivion-theme='light'] {
+  color-scheme: light;
+}
+html[data-oblivion-theme] body {
+  background: var(--ob-bg) !important;
+  color: var(--ob-text) !important;
+  font-family: var(--ob-font) !important;
+  font-size: var(--ob-size) !important;
+  isolation: isolate;
+}
+html[data-oblivion-theme]
+  :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    .h1,
+    .h2,
+    .h3,
+    .game-title,
+    .game-title a,
+    .tc-desc,
+    .tc-title,
+    .tc-price,
+    .media-user-name,
+    .chat-msg-author-link,
+    .control-label,
+    .param-item,
+    .lead
+  ) {
+  color: var(--ob-text) !important;
+}
+html[data-oblivion-theme]
+  :where(
+    .text-muted,
+    .text-light,
+    .help-block,
+    .block-info,
+    .tc-date,
+    .tc-game,
+    .chat-msg-date,
+    .chat-msg-author,
+    .media-user-info,
+    .footer-block,
+    .chat-promo-desc
+  ) {
+  color: var(--ob-muted) !important;
+}
+html[data-oblivion-theme] :where(a, .pseudo-a, .btn-link) {
+  color: var(--ob-link);
+}
+html[data-oblivion-theme] :where(a:hover, a:focus-visible, .pseudo-a:hover, .btn-link:hover) {
+  color: var(--ob-link);
+  text-decoration: underline;
+}
+html[data-oblivion-theme]
+  :where(
+    .navbar-default,
+    .nav-container,
+    .dropdown-menu,
+    .modal-content,
+    .panel,
+    .list-group-item,
+    .chat-header,
+    .chat-form,
+    .chat-detail,
+    .chat-message-container,
+    .chat-message-list,
+    .bg-light-color,
+    .bg-light-style,
+    .panel-heading,
+    .panel-footer,
+    .chat-promo,
+    .alert,
+    .showcase-filters,
+    .content-with-cd-wide
+  ) {
+  background-color: var(--ob-surface) !important;
+  color: var(--ob-text) !important;
+  border-color: var(--ob-border) !important;
+}
+html[data-oblivion-theme] :where(.navbar-default) {
+  box-shadow: 0 1px 0 var(--ob-border);
+}
+html[data-oblivion-theme]
+  :where(
+    .navbar-default .navbar-nav > li > a,
+    .navbar-default .navbar-brand,
+    .navbar-text,
+    .dropdown-menu > li > a,
+    .nav-tabs > li > a,
+    .nav-pills > li > a
+  ) {
+  color: var(--ob-muted) !important;
+}
+html[data-oblivion-theme]
+  :where(
+    .navbar-default .navbar-nav > li > a:hover,
+    .dropdown-menu > li > a:hover,
+    .dropdown-menu > .active > a,
+    .nav-tabs > li.active > a,
+    .nav-tabs > li > a:hover,
+    .nav-pills > li.active > a
+  ) {
+  background: var(--ob-raised) !important;
+  color: var(--ob-text) !important;
+  border-color: var(--ob-border) !important;
+}
+html[data-oblivion-theme='dark'] .navbar-brand .logo-color {
+  filter: brightness(0) invert(1);
+}
+html[data-oblivion-theme] :where(.dropdown-menu, .modal-content, .panel, .chat-promo) {
+  border-radius: var(--ob-radius) !important;
+}
+html[data-oblivion-theme]
+  :where(
+    .form-control,
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='submit']):not(
+        [type='button']
+      ),
+    textarea,
+    select,
+    .bootstrap-select > .dropdown-toggle
+  ) {
+  background-color: var(--ob-bg) !important;
+  color: var(--ob-text) !important;
+  border-color: var(--ob-border) !important;
+  box-shadow: none !important;
+}
+html[data-oblivion-theme] :where(input, textarea)::placeholder {
+  color: var(--ob-muted) !important;
+  opacity: 0.85;
+}
+html[data-oblivion-theme]
+  :where(.form-control:focus, input:focus-visible, textarea:focus-visible, select:focus-visible) {
+  outline: 2px solid var(--ob-link) !important;
+  outline-offset: 2px;
+  border-color: var(--ob-link) !important;
+}
+html[data-oblivion-theme] :where(input[type='checkbox'], input[type='radio'], input[type='range']) {
+  accent-color: var(--ob-accent);
+}
+html[data-oblivion-theme]
+  :where(
+    .btn-default,
+    .btn-gray,
+    .btn-dark,
+    .btn-default:focus,
+    .btn-gray:focus,
+    .lot-field-radio-box .btn,
+    .counter-list .counter-item
+  ) {
+  color: var(--ob-text) !important;
+  background: var(--ob-raised) !important;
+  border: 1px solid var(--ob-border) !important;
+  box-shadow: none !important;
+}
+html[data-oblivion-theme]
+  :where(
+    .btn-default:hover,
+    .btn-gray:hover,
+    .btn-dark:hover,
+    .counter-list .counter-item:hover,
+    .lot-field-radio-box .btn:hover
+  ) {
+  color: var(--ob-text) !important;
+  background: var(--ob-hover) !important;
+}
+html[data-oblivion-theme]
+  :where(
+    .btn-primary,
+    .btn-primary:hover,
+    .btn-primary:focus,
+    .btn-primary:active,
+    .counter-list .counter-item.active,
+    .lot-field-radio-box .btn.active
+  ) {
+  background: var(--ob-accent) !important;
+  color: var(--ob-accent-ink) !important;
+  border-color: var(--ob-accent) !important;
+  text-shadow: none !important;
+}
+html[data-oblivion-theme] .counter-list .counter-item {
+  border-radius: var(--ob-radius) !important;
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+html[data-oblivion-theme] .counter-list .counter-param {
+  color: inherit !important;
+  font-weight: 600;
+}
+html[data-oblivion-theme] .counter-list .counter-value {
+  color: inherit !important;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+html[data-oblivion-theme]
+  :where(
+    .tc-header,
+    .tc-header > div,
+    .tc-item > div,
+    .tc-item,
+    .offer-tc-container,
+    .page-header,
+    .game-about,
+    .setting-group,
+    .modal-header,
+    .modal-footer,
+    .nav-tabs,
+    .table > thead > tr > th,
+    .table > tbody > tr > td
+  ) {
+  border-color: var(--ob-border) !important;
+}
+html[data-oblivion-theme] :where(a.tc-item, .tc-item, .table) {
+  color: var(--ob-text) !important;
+  background-color: var(--ob-surface) !important;
+}
+html[data-oblivion-theme]
+  :where(.tc-header, .table > thead, .table-striped > tbody > tr:nth-of-type(odd)) {
+  background-color: var(--ob-raised) !important;
+  color: var(--ob-muted) !important;
+}
+html[data-oblivion-theme]
+  :where(
+    a.tc-item:hover,
+    .table-hover > tbody > tr:hover,
+    .contact-item:hover,
+    .contact-item.active
+  ) {
+  background-color: var(--ob-hover) !important;
+  color: var(--ob-text) !important;
+}
+html[data-oblivion-theme] :where(.tc-header > div) {
+  color: var(--ob-muted) !important;
+  font-weight: 600;
+}
+html[data-oblivion-theme]
+  :where(
+    .tc-desc,
+    .tc-desc-text,
+    .contact-item-name,
+    .contact-item-message,
+    .chat-msg-text,
+    .chat-msg-text p,
+    .user-description,
+    .review-item-text,
+    .review-text
+  ) {
+  color: var(--ob-text) !important;
+}
+html[data-oblivion-theme] :where(.chat-message-list, .chat-contacts, .contact-item) {
+  background-color: var(--ob-bg) !important;
+  border-color: var(--ob-border) !important;
+}
+html[data-oblivion-theme]
+  :where(.contact-item.unread, .chat-msg-item.chat-msg-own, .chat-msg-item.own) {
+  background-color: var(--ob-soft) !important;
+}
+html[data-oblivion-theme]
+  :where(.label-default, .badge, .pagination > li > a, .pagination > li > span) {
+  background: var(--ob-raised) !important;
+  color: var(--ob-text) !important;
+  border-color: var(--ob-border) !important;
+}
+html[data-oblivion-theme] :where(.pagination > .active > a, .pagination > .active > span) {
+  background: var(--ob-accent) !important;
+  color: var(--ob-accent-ink) !important;
+}
+html[data-oblivion-theme] :where(.alert-info, .alert-warning, .alert-success, .alert-danger) {
+  border-left: 3px solid var(--ob-link) !important;
+}
+html[data-oblivion-theme]
+  :where(hr, .review-container, .review-item, .profile-header, .user-profile) {
+  border-color: var(--ob-border) !important;
+}
+html[data-oblivion-theme] :where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--ob-link);
+  outline-offset: 3px;
+}
+html[data-oblivion-decor='hide'] :where(.cd-container, .corner-cd-container) {
+  display: none !important;
+}
+html[data-oblivion-decor='hide'] .content-with-cd {
+  margin-right: 0 !important;
+}
+html[data-oblivion-decor='hide'] .page-content-full {
+  position: relative;
+}
+html[data-oblivion-density='compact'][data-oblivion-theme] .tc-item > div {
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+  height: auto !important;
+}
+html[data-oblivion-density='compact'][data-oblivion-theme] .counter-list .counter-item {
+  padding: 7px 11px;
+}
+html[data-oblivion-balance='hidden'] :where(.badge-balance, .user-link-balance, .balance) {
+  filter: blur(7px);
+}
+/* Decorative backgrounds stay behind opaque surfaces. No content or button becomes transparent. */
+html[data-oblivion-theme] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+html[data-oblivion-atmosphere='orbit'] body::before {
+  background: radial-gradient(
+    ellipse at 95% 0%,
+    color-mix(in srgb, var(--ob-accent) 12%, transparent),
+    transparent 48%
+  );
+}
+html[data-oblivion-atmosphere='aurora'] body::before {
+  background:
+    radial-gradient(
+      ellipse at 0% 0%,
+      color-mix(in srgb, var(--ob-accent) 10%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 100% 90%,
+      color-mix(in srgb, var(--ob-link) 8%, transparent),
+      transparent 48%
+    );
+}
+html[data-oblivion-atmosphere='glow'] body::before {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    color-mix(in srgb, var(--ob-accent) 10%, transparent),
+    transparent 65%
+  );
+}
+html[data-oblivion-atmosphere='grid'] body::before {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ob-border) 20%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ob-border) 20%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 48px 48px;
+}
+html[data-oblivion-image='on'] body::before {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--ob-bg) calc(var(--ob-background-shade) * 100%), transparent),
+      color-mix(in srgb, var(--ob-bg) calc(var(--ob-background-shade) * 100%), transparent)
+    ),
+    var(--ob-image);
+  background-position: center;
+  background-size: cover;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-oblivion-theme] *,
+  html[data-oblivion-theme] *::before,
+  html[data-oblivion-theme] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}
+@media (max-width: 767px) {
+  html[data-oblivion-theme] .counter-list .counter-item {
+    padding: 8px 11px;
+    border-radius: 9px !important;
+  }
+}

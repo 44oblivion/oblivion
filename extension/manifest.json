@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Oblivion",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Независимые инструменты для FunPay: лоты, чаты, аналитика, AI и автоматизация.",
   "permissions": [
     "storage",
@@ -35,7 +35,14 @@
     {
       "matches": ["https://funpay.com/*", "https://*.funpay.com/*"],
       "exclude_matches": ["https://support.funpay.com/*"],
-      "js": ["shared/core.js", "content/workspace.js", "content/page-tools.js"],
+      "js": ["shared/core.js", "shared/themes.js", "content/theme-init.js"],
+      "css": ["content/site-theme.css"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://funpay.com/*", "https://*.funpay.com/*"],
+      "exclude_matches": ["https://support.funpay.com/*"],
+      "js": ["content/workspace.js", "content/page-tools.js"],
       "run_at": "document_idle"
     }
   ],

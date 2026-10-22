@@ -39,7 +39,7 @@ const fs = require('node:fs/promises'),
     } else {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(
-        '<!doctype html><html><head><title>Oblivion runtime smoke fixture</title></head><body><main><h1>Disposable local test fixture</h1></main></body></html>',
+        '<!doctype html><html><head><title>Oblivion runtime smoke fixture</title></head><body><style>.navbar-default,.counter-item{background:rgb(255,255,255)}.tc-item{display:table-row}.tc-item>div{display:table-cell}</style><nav class="navbar-default">Fixture</nav><div class="counter-list"><a class="counter-item active">Active</a></div><div class="tc-item"><div>Cell</div></div><main><h1>Disposable local test fixture</h1></main></body></html>',
       );
     }
   });
@@ -50,9 +50,9 @@ const fs = require('node:fs/promises'),
     await fs.cp(path.join(root, 'extension'), extension, { recursive: true });
     const manifest = JSON.parse(await fs.readFile(path.join(extension, 'manifest.json'), 'utf8'));
     manifest.permissions.push('http://127.0.0.1/*');
-    manifest.content_scripts[0].matches.push('http://127.0.0.1/*');
+    for (const group of manifest.content_scripts) group.matches.push('http://127.0.0.1/*');
     manifest.content_scripts[0].js.unshift('content/runtime-capture.js');
-    manifest.content_scripts[0].js.push('content/runtime-test.js');
+    manifest.content_scripts.at(-1).js.push('content/runtime-test.js');
     await fs.writeFile(
       path.join(extension, 'content/runtime-capture.js'),
       `globalThis.__oblivionRuntimeRoots=[];const originalAttachShadow=Element.prototype.attachShadow;Element.prototype.attachShadow=function(options){const root=originalAttachShadow.call(this,options);globalThis.__oblivionRuntimeRoots.push(root);return root;};`,
@@ -69,7 +69,7 @@ const fs = require('node:fs/promises'),
     );
     await fs.writeFile(
       path.join(extension, 'content/runtime-test.js'),
-      `setTimeout(async()=>{const host=document.querySelector('#oblivion-workspace');const root=globalThis.__oblivionRuntimeRoots.find(r=>r.host===host);const ready=!!root?.querySelector('.dock')&&!root.querySelector('.toast');await fetch(${JSON.stringify(origin + '/report')},{method:'POST',body:JSON.stringify(ready?{kind:'content',ok:true,mounted:true,dockReady:true}:{kind:'content',error:'Content workspace failed to mount',host:!!host,roots:globalThis.__oblivionRuntimeRoots.length,toast:root?.querySelector('.toast')?.textContent})});},1500);`,
+      `setTimeout(async()=>{try{const host=document.querySelector('#oblivion-workspace');const root=globalThis.__oblivionRuntimeRoots.find(r=>r.host===host);if(!root?.querySelector('.dock')||root.querySelector('.toast'))throw Error('Content workspace failed to mount');for(const p of OblivionThemes.catalog){const a={...OblivionCore.defaults().appearance,...OblivionThemes.preset(p.id)};OblivionThemes.apply(document,a);const nav=getComputedStyle(document.querySelector('.navbar-default'));if(nav.backgroundColor==='rgb(255, 255, 255)'&&p.mode==='dark')throw Error('Unstyled dark navbar: '+p.id);const chip=getComputedStyle(document.querySelector('.counter-item'));if(chip.backgroundColor==='rgb(255, 255, 255)'&&p.mode==='dark')throw Error('Unstyled category: '+p.id);if(getComputedStyle(document.querySelector('.tc-item')).display!=='table-row'||getComputedStyle(document.querySelector('.tc-item>div')).display!=='table-cell')throw Error('Table geometry changed');}OblivionThemes.apply(document,OblivionCore.defaults().appearance);if(document.documentElement.hasAttribute('data-oblivion-theme'))throw Error('Theme reset failed');await fetch(${JSON.stringify(origin + '/report')},{method:'POST',body:JSON.stringify({kind:'content',ok:true,mounted:true,dockReady:true,themes:10,tableGeometry:true,reset:true})});}catch(error){await fetch(${JSON.stringify(origin + '/report')},{method:'POST',body:JSON.stringify({kind:'content',error:error.message})});}},1500);`,
     );
     const webext = path.join(root, 'node_modules/web-ext/bin/web-ext.js');
     const firefox =

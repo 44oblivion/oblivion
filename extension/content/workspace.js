@@ -4,6 +4,10 @@
   if (document.querySelector('#oblivion-workspace')) return;
   const ext = typeof chrome !== 'undefined' ? chrome : browser;
   const C = OblivionCore;
+  const T = OblivionThemes;
+  let appearanceDraft = null;
+  let themeFilter = 'all',
+    themeSearch = '';
   function pageAccount() {
     try {
       return String(
@@ -125,6 +129,7 @@
     } catch (error) {
       if (error.message.startsWith('STALE_SETTINGS:')) {
         state = await request('state');
+        if (!backdrop) renderedRevision = state.preferences.revision;
         dialog?.remove();
         dialog = null;
         render();
@@ -135,7 +140,8 @@
     applyAppearance();
     render();
   }
-  function close() {
+  function close(options = {}) {
+    if (!options.keepThemePreview) cancelAppearance();
     backdrop?.remove();
     backdrop = null;
     dialog = null;
@@ -254,7 +260,7 @@
       if (event.target === backdrop) close();
     };
     const sidebar = backdrop.querySelector('.sidebar');
-    markup(sidebar, '<div class="brand">OBLIVION<span>SELLER WORKSPACE / 0.1</span></div>');
+    markup(sidebar, '<div class="brand">OBLIVION<span>SELLER WORKSPACE / 0.2</span></div>');
     for (const [id, icon, label] of pages) {
       const b = button(
         '',
@@ -277,6 +283,7 @@
   }
   function render() {
     if (!backdrop) return;
+    if (view !== 'appearance' && appearanceDraft) cancelAppearance();
     renderedRevision = state.preferences.revision;
     backdrop
       .querySelectorAll('.nav')
@@ -1065,91 +1072,298 @@
       }
     };
   }
+  function previewAppearance(value) {
+    appearanceDraft = C.normalize({
+      appearance: { ...state.preferences.appearance, ...value },
+    }).appearance;
+    applyAppearance();
+    updateThemePreview();
+  }
+  function cancelAppearance() {
+    if (!appearanceDraft) return;
+    appearanceDraft = null;
+    shadow.querySelector('.theme-preview-bar')?.remove();
+    if (state) applyAppearance();
+  }
+  async function saveAppearance() {
+    if (!appearanceDraft) return;
+    const chosen = structuredClone(appearanceDraft);
+    delete chosen.sound;
+    delete chosen.volume;
+    await patch({ appearance: chosen });
+    appearanceDraft = null;
+    applyAppearance();
+    updateThemePreview();
+    render();
+    toast('Тема сохранена.');
+  }
+  function updateThemePreview() {
+    shadow.querySelector('.theme-preview-bar')?.remove();
+    if (!appearanceDraft) return;
+    const bar = document.createElement('div');
+    bar.className = 'theme-preview-bar';
+    bar.setAttribute('role', 'status');
+    const label = document.createElement('span');
+    label.textContent = 'Предпросмотр · изменения не сохранены';
+    bar.append(
+      label,
+      button('Сохранить', saveAppearance, 'primary'),
+      button(
+        'Отмена',
+        () => {
+          cancelAppearance();
+          render();
+        },
+        'quiet',
+      ),
+    );
+    shadow.append(bar);
+  }
   function appearance(page) {
-    const a = state.preferences.appearance;
-    const presets = [
-      { name: 'Orbit', mode: 'dark', accent: '#c6f36b' },
-      { name: 'Polar', mode: 'light', accent: '#2464e8' },
-      { name: 'Violet', mode: 'dark', accent: '#b8a0ff' },
-      { name: 'Amber', mode: 'dark', accent: '#ffd28e' },
-    ];
+    const a = appearanceDraft || state.preferences.appearance;
+    const saved = state.preferences.appearance;
+    const visualCopy = (value) => {
+      const out = structuredClone(value);
+      delete out.sound;
+      delete out.volume;
+      return out;
+    };
+    const custom = state.preferences.savedThemes.map((item) => ({
+      ...T.resolve(item.appearance).tokens,
+      id: item.id,
+      name: item.name,
+      note: 'Ваша тема',
+      custom: true,
+      appearance: item.appearance,
+    }));
+    const catalog = [...T.catalog, ...custom];
+    const matches = catalog.filter(
+      (p) =>
+        (themeFilter === 'all' ||
+          (themeFilter === 'favorites'
+            ? state.preferences.favoriteThemes.includes(p.id)
+            : themeFilter === 'custom'
+              ? p.custom
+              : p.mode === themeFilter)) &&
+        (p.name + ' ' + p.note).toLocaleLowerCase().includes(themeSearch.toLocaleLowerCase()),
+    );
     markup(
       page,
-      `<div class="card"><h2>Темы Oblivion</h2><div data-presets class="row"></div><div class="row"><button data-export>Экспорт темы</button><label class="file-label">Импорт темы<input data-import type="file" accept="application/json"></label></div></div><div class="grid"><div class="card"><h2>Внешний вид FunPay</h2><label>Тема<select name="mode"><option value="system">Как в системе</option><option value="dark">Тёмная</option><option value="light">Светлая</option><option value="original">Оригинальная FunPay</option></select></label>${field('accent', 'Акцентный цвет', a.accent, 'color')}<label>Шрифт<select name="font"><option value="system-ui">Системный</option><option value="Georgia">Georgia</option><option value="monospace">Моноширинный</option></select></label>${field('size', 'Размер текста', a.size, 'number')}<label>Плотность<select name="density"><option value="normal">Обычная</option><option value="compact">Компактная</option></select></label>${check('hideBalance', 'Скрыть баланс на странице', a.hideBalance)}${check('cursor', 'Орбитальный курсор', a.cursor)}<button data-save class="primary">Применить</button></div><div class="card"><h2>Свой фон и звук</h2><p class="muted">Файлы остаются в локальном хранилище. Для звука Safari/Firefox может потребоваться клик по странице.</p><label class="file-label">Выбрать фон<input data-background type="file" accept="image/*"></label><button data-clear-background>Убрать фон</button><label class="file-label">Выбрать звук<input data-sound type="file" accept="audio/*"></label><label>Громкость<input name="volume" type="range" min="0" max="1" step="0.05" value="${a.volume}"></label><div class="row"><button data-play>Прослушать</button><button data-clear-sound>Стандартный звук</button></div><details><summary>Свой CSS</summary>${area('css', 'CSS для страницы FunPay', a.css)}<button data-css>Применить CSS</button></details></div></div>`,
+      `<section class="theme-intro"><div><span class="eyebrow">OBLIVION / APPEARANCE</span><h2>Своё пространство. Чёткие детали.</h2><p>Цельные темы для шапки, категорий, таблиц и чата. Фон остаётся фоном.</p></div><button data-reset-look class="quiet">Исходный вид FunPay</button></section>
+      <div class="theme-controls"><div class="theme-tabs" role="group" aria-label="Фильтр тем">${[
+        ['all', 'Все'],
+        ['dark', 'Тёмные'],
+        ['light', 'Светлые'],
+        ['favorites', 'Избранное'],
+        ['custom', 'Мои темы'],
+      ]
+        .map(
+          ([id, label]) =>
+            `<button data-filter-theme="${id}" aria-pressed="${themeFilter === id}" class="${themeFilter === id ? 'selected' : ''}">${label}</button>`,
+        )
+        .join(
+          '',
+        )}</div><input data-theme-search aria-label="Поиск темы" placeholder="Найти тему…" value="${e(themeSearch)}"></div>
+      <div class="theme-gallery">${matches.map((p) => `<article class="theme-card ${(a.preset || a.theme) === p.id && a.mode !== 'original' ? 'selected' : ''}" style="--sw-bg:${p.bg};--sw-surface:${p.surface};--sw-raised:${p.raised};--sw-text:${p.text};--sw-accent:${p.accent}"><button class="theme-pick" data-theme="${e(p.id)}" aria-label="Примерить ${e(p.name)}" aria-pressed="${(a.preset || a.theme) === p.id && a.mode !== 'original'}"><div class="theme-swatch" aria-hidden="true"><div class="sw-nav"><i></i><b></b><b></b><b></b></div><div class="sw-body"><div class="sw-title"></div><div class="sw-chips"><i></i><i></i><i></i></div><div class="sw-table"><span></span><span></span><span></span></div></div></div><div class="theme-card-label"><strong>${e(p.name)}</strong><span>${p.mode === 'light' ? 'Светлая' : 'Тёмная'}</span></div><p>${e(p.note)}</p></button><div class="theme-card-footer"><span class="theme-state">${(saved.preset || saved.theme) === p.id && saved.mode !== 'original' ? '✓ Сохранена' : (a.preset || a.theme) === p.id && appearanceDraft ? 'Предпросмотр' : 'Примерить →'}</span><button data-favorite-theme="${e(p.id)}" class="favorite-button" aria-label="${state.preferences.favoriteThemes.includes(p.id) ? 'Убрать из избранного' : 'В избранное'} ${e(p.name)}" aria-pressed="${state.preferences.favoriteThemes.includes(p.id)}">${state.preferences.favoriteThemes.includes(p.id) ? '★' : '☆'}</button>${p.custom ? `<button class="favorite-button" data-delete-theme="${e(p.id)}" aria-label="Удалить ${e(p.name)}">×</button>` : ''}</div></article>`).join('') || '<div class="empty">Подходящих тем нет. Попробуйте другой фильтр или сохраните свою.</div>'}</div>
+      <div class="theme-action-row"><p>${appearanceDraft ? 'Тема сейчас показана только в предпросмотре.' : 'Выберите тему — сначала покажем предпросмотр.'}</p><div class="row"><button data-show-page>Посмотреть страницу</button><button data-save-theme class="primary" ${appearanceDraft ? '' : 'disabled'}>Сохранить тему</button><button data-cancel-theme ${appearanceDraft ? '' : 'disabled'}>Отменить</button></div></div>
+      <div class="grid"><section class="card"><h2>Точная настройка</h2><label>Режим<select name="mode"><option value="dark">Тёмный</option><option value="light">Светлый</option><option value="system">По системе</option><option value="original">Оригинальный FunPay</option></select></label><div class="grid">${field('accent', 'Акцент', a.accent, 'color')}<label>Скругления · <span data-radius-value>${a.radius} px</span><input name="radius" type="range" min="0" max="24" value="${a.radius}"></label></div><p class="muted" data-contrast>Цвет текста на акценте подбирается автоматически для читаемости.</p><label>Шрифт<select name="font"><option value="system-ui">Системный</option><option value="Georgia">Georgia</option><option value="monospace">Моноширинный</option></select></label><div class="grid">${field('size', 'Размер текста', a.size, 'number')}<label>Плотность<select name="density"><option value="normal">Комфортная</option><option value="compact">Компактная</option></select></label></div>${check('hideDecor', 'Чистая компоновка: убрать большой баннер FunPay', a.hideDecor)}${check('hideBalance', 'Скрыть баланс', a.hideBalance)}${check('cursor', 'Орбитальный курсор', a.cursor)}<div class="note">Оригинальный режим отключает окраску страницы, фон и свой CSS. Никакие колонки таблиц не превращаются в карточки.</div></section>
+      <section class="card"><h2>Атмосфера и фон</h2><label>Фоновый эффект<select name="atmosphere"><option value="none">Без эффекта</option><option value="orbit">Орбита</option><option value="aurora">Северное сияние</option><option value="glow">Мягкое свечение</option><option value="grid">Тонкая сетка</option></select></label><p class="muted">Лёгкие эффекты без загрузки картинок и постоянной анимации.</p><label class="file-label">Своя картинка · до 3 МБ<input data-background type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label>${a.background ? '<span class="pill">Картинка выбрана</span>' : ''}<label>Затемнение картинки · <span data-shade-value>${a.backgroundShade}%</span><input name="backgroundShade" type="range" min="40" max="95" step="1" value="${a.backgroundShade}"></label><button data-clear-background>Убрать картинку</button><p class="muted">Картинка затемнена, а поля, таблицы и чат остаются непрозрачными.</p><details><summary>Свой CSS · дополнительно</summary>${area('css', 'CSS для FunPay', a.css)}<button data-css>Показать CSS в предпросмотре</button><p class="muted">Внешние импорты и ссылки в CSS отключены. Готовые пресеты сбрасывают этот CSS.</p></details></section></div>
+      <section class="card"><div class="row between"><div><h2>Своя коллекция</h2><p>Сохраните настройку под именем или перенесите её файлом.</p></div><div class="row"><button data-save-preset>Сохранить как свою тему</button><button data-export>Экспорт темы</button><label class="file-label">Импорт темы<input data-import type="file" accept="application/json"></label></div></div></section>
+      <section class="card"><h2>Звук уведомлений</h2><p>Настраивается отдельно от тем. Смена палитры не меняет выбранный звук.</p><div class="row"><label class="file-label">Выбрать звук · до 2 МБ<input data-sound type="file" accept="audio/*"></label><button data-play>Прослушать</button><button data-clear-sound>Стандартный</button><label>Громкость<input name="volume" type="range" min="0" max="1" step="0.05" value="${state.preferences.appearance.volume}"></label><button data-volume>Сохранить громкость</button></div></section>`,
     );
-    page.querySelector('[name=mode]').value = a.mode;
-    page.querySelector('[name=font]').value = a.font;
-    page.querySelector('[name=density]').value = a.density;
-    for (const preset of presets)
-      page.querySelector('[data-presets]').append(
-        button(preset.name, async () => {
-          await patch({ appearance: { mode: preset.mode, accent: preset.accent } });
+    for (const key of ['mode', 'font', 'density', 'atmosphere'])
+      page.querySelector(`[name="${key}"]`).value = a[key];
+    const updateControls = () => {
+      const values = formValues(page);
+      previewAppearance({
+        ...a,
+        mode: values.mode,
+        accent: values.accent,
+        radius: Number(values.radius),
+        font: values.font,
+        size: Number(values.size),
+        density: values.density,
+        hideDecor: values.hideDecor,
+        hideBalance: values.hideBalance,
+        cursor: values.cursor,
+        atmosphere: values.atmosphere,
+        backgroundShade: Number(values.backgroundShade),
+      });
+      page.querySelector('[data-radius-value]').textContent = values.radius + ' px';
+      page.querySelector('[data-shade-value]').textContent = values.backgroundShade + '%';
+      page.querySelector('[data-save-theme]').disabled = false;
+      page.querySelector('[data-cancel-theme]').disabled = false;
+    };
+    page
+      .querySelectorAll(
+        '[name="mode"],[name="accent"],[name="radius"],[name="font"],[name="size"],[name="density"],[name="hideDecor"],[name="hideBalance"],[name="cursor"],[name="atmosphere"],[name="backgroundShade"]',
+      )
+      .forEach((input) =>
+        input.addEventListener(
+          input.type === 'checkbox' || input.tagName === 'SELECT' ? 'change' : 'input',
+          updateControls,
+        ),
+      );
+    page.querySelectorAll('[data-theme]').forEach(
+      (b) =>
+        (b.onclick = () => {
+          const p = catalog.find((item) => item.id === b.dataset.theme);
+          previewAppearance(p.custom ? { ...p.appearance, preset: p.id } : T.preset(p.id));
           render();
         }),
-      );
-    page.querySelector('[data-save]').onclick = (event) =>
+    );
+    page.querySelectorAll('[data-filter-theme]').forEach(
+      (b) =>
+        (b.onclick = () => {
+          themeFilter = b.dataset.filterTheme;
+          render();
+        }),
+    );
+    page.querySelector('[data-theme-search]').oninput = (event) => {
+      const input = event.target,
+        selection = input.selectionStart;
+      themeSearch = input.value;
+      render();
+      const next = backdrop.querySelector('[data-theme-search]');
+      next.focus();
+      next.setSelectionRange(selection, selection);
+    };
+    page.querySelectorAll('[data-favorite-theme]').forEach(
+      (b) =>
+        (b.onclick = () =>
+          busy(b, async () => {
+            const id = b.dataset.favoriteTheme;
+            const favorites = state.preferences.favoriteThemes;
+            await patch({
+              favoriteThemes: favorites.includes(id)
+                ? favorites.filter((v) => v !== id)
+                : [...favorites, id],
+            });
+          })),
+    );
+    page.querySelectorAll('[data-delete-theme]').forEach(
+      (b) =>
+        (b.onclick = () =>
+          busy(b, async () => {
+            await patch({
+              savedThemes: state.preferences.savedThemes.filter(
+                (p) => p.id !== b.dataset.deleteTheme,
+              ),
+            });
+          })),
+    );
+    page.querySelector('[data-save-theme]').onclick = (event) =>
+      busy(event.currentTarget, saveAppearance);
+    page.querySelector('[data-cancel-theme]').onclick = () => {
+      cancelAppearance();
+      render();
+    };
+    page.querySelector('[data-show-page]').onclick = () => close({ keepThemePreview: true });
+    page.querySelector('[data-reset-look]').onclick = (event) =>
       busy(event.currentTarget, async () => {
-        const v = formValues(page);
+        cancelAppearance();
         await patch({
           appearance: {
-            mode: v.mode,
-            accent: v.accent,
-            font: v.font,
-            size: Number(v.size),
-            density: v.density,
-            cursor: v.cursor,
-            hideBalance: v.hideBalance,
-            volume: Number(v.volume),
+            ...C.defaults().appearance,
+            sound: state.preferences.appearance.sound,
+            volume: state.preferences.appearance.volume,
           },
         });
-        toast('Оформление применено.');
+        toast('Исходный вид FunPay восстановлен.');
       });
-    const readMedia = (selector, key, max, mime) => {
+    page.querySelector('[data-export]').onclick = () =>
+      download('oblivion-theme.json', {
+        format: 'oblivion-theme',
+        version: 2,
+        appearance: visualCopy(appearanceDraft || saved),
+      });
+    file(
+      page.querySelector('[data-import]'),
+      (value) => {
+        if (
+          value.format !== 'oblivion-theme' ||
+          !value.appearance ||
+          typeof value.appearance !== 'object'
+        )
+          throw new Error('Неверный формат темы.');
+        previewAppearance({
+          ...visualCopy(C.normalize({ appearance: value.appearance }).appearance),
+          sound: saved.sound,
+          volume: saved.volume,
+        });
+        render();
+        toast('Импорт показан в предпросмотре. Сохраните, если всё подходит.');
+      },
+      true,
+    );
+    page.querySelector('[data-save-preset]').onclick = () =>
+      modal('Сохранить свою тему', field('name', 'Название темы'), [
+        [
+          'Сохранить',
+          async (d) => {
+            const name = formValues(d).name.trim();
+            if (!name) throw new Error('Введите название.');
+            const appearance = visualCopy(appearanceDraft || saved);
+            const id = 'custom-' + uid();
+            await patch({
+              savedThemes: [...state.preferences.savedThemes, { id, name, appearance }],
+            });
+            d.remove();
+            dialog = null;
+            toast('Своя тема добавлена в коллекцию.');
+          },
+          'primary',
+        ],
+      ]);
+    const readMedia = (selector, max, type, action) => {
       page.querySelector(selector).onchange = (event) =>
         busy(null, async () => {
-          const f = event.target.files[0];
-          if (!f) return;
-          if (!f.type.startsWith(mime) || f.size > max)
+          const media = event.target.files[0];
+          if (!media) return;
+          if (!media.type.startsWith(type) || media.size > max)
             throw new Error('Неподдерживаемый тип или слишком большой файл.');
           const data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(f);
+            reader.onerror = () => reject(new Error('Файл не удалось прочитать.'));
+            reader.readAsDataURL(media);
           });
-          await patch({ appearance: { [key]: data } });
-          toast('Файл сохранён локально.');
+          await action(data);
         });
     };
-    readMedia('[data-background]', 'background', 3_000_000, 'image/');
-    readMedia('[data-sound]', 'sound', 2_000_000, 'audio/');
-    page.querySelector('[data-clear-background]').onclick = () =>
-      busy(null, () => patch({ appearance: { background: '' } }));
+    readMedia('[data-background]', 3_000_000, 'image/', (data) => {
+      previewAppearance({ ...(appearanceDraft || saved), background: data });
+      render();
+    });
+    page.querySelector('[data-clear-background]').onclick = () => {
+      previewAppearance({ ...(appearanceDraft || saved), background: '' });
+      render();
+    };
+    page.querySelector('[data-css]').onclick = () => {
+      previewAppearance({
+        ...(appearanceDraft || saved),
+        css: page.querySelector('[name=css]').value,
+      });
+      toast('CSS показан в предпросмотре.');
+    };
+    readMedia('[data-sound]', 2_000_000, 'audio/', async (data) => {
+      await patch({ appearance: { sound: data } });
+      toast('Звук сохранён.');
+    });
     page.querySelector('[data-clear-sound]').onclick = () =>
       busy(null, () => patch({ appearance: { sound: '' } }));
+    page.querySelector('[data-volume]').onclick = (event) =>
+      busy(event.currentTarget, () =>
+        patch({ appearance: { volume: Number(page.querySelector('[name=volume]').value) } }),
+      );
     page.querySelector('[data-play]').onclick = (event) =>
       busy(event.currentTarget, async () => {
-        if (!state.preferences.appearance.sound) throw new Error('Сначала выберите свой звук.');
-        const audio = new Audio(state.preferences.appearance.sound);
+        const sound = state.preferences.appearance.sound;
+        if (!sound) throw new Error('Сначала выберите свой звук.');
+        const audio = new Audio(sound);
         audio.volume = Number(page.querySelector('[name=volume]').value);
         await audio.play();
       });
-    page.querySelector('[data-css]').onclick = () =>
-      busy(null, () => patch({ appearance: { css: page.querySelector('[name=css]').value } }));
-    page.querySelector('[data-export]').onclick = () =>
-      download('oblivion-theme.json', {
-        format: 'oblivion-theme',
-        appearance: state.preferences.appearance,
-      });
-    file(
-      page.querySelector('[data-import]'),
-      async (value) => {
-        if (value.format !== 'oblivion-theme') throw new Error('Неверный формат темы.');
-        await patch({ appearance: C.normalize({ appearance: value.appearance }).appearance });
-        render();
-      },
-      true,
-    );
   }
   function notes(page) {
     markup(
@@ -1217,7 +1431,7 @@
         .map(([key, value]) => field('rate-' + key, 'RUB за 1 ' + key, value, 'number'))
         .join(
           '',
-        )}<button data-rates>Сохранить курсы</button></div></div><div class="card"><h2>Oblivion 0.1.0 · Firefox</h2><p>Независимая реализация для FunPay. Работа фоновых задач требует запущенного браузера и действующей сессии. Поддержку функций и ограничения смотрите в README репозитория.</p><div class="row"><button data-data-consent>Разрешить передачу данных сервисам</button><button data-identity>Проверить вход FunPay</button><button data-pause class="danger">Остановить всю автоматизацию</button></div><p class="muted">Горячая клавиша: Alt+Shift+O. Escape закрывает рабочее пространство.</p></div>`,
+        )}<button data-rates>Сохранить курсы</button></div></div><div class="card"><h2>Oblivion 0.2.0 · Firefox</h2><p>Независимая реализация для FunPay. Работа фоновых задач требует запущенного браузера и действующей сессии. Поддержку функций и ограничения смотрите в README репозитория.</p><div class="row"><button data-data-consent>Разрешить передачу данных сервисам</button><button data-identity>Проверить вход FunPay</button><button data-pause class="danger">Остановить всю автоматизацию</button></div><p class="muted">Горячая клавиша: Alt+Shift+O. Escape закрывает рабочее пространство.</p></div>`,
     );
     page.querySelector('[name=provider]').value = ai.provider;
     page.querySelector('[data-ai-save]').onclick = (ev) =>
@@ -1337,38 +1551,47 @@
     audioListener;
   function applyAppearance() {
     if (!state) return;
-    const a = state.preferences.appearance;
+    const a = appearanceDraft
+      ? {
+          ...appearanceDraft,
+          sound: state.preferences.appearance.sound,
+          volume: state.preferences.appearance.volume,
+        }
+      : state.preferences.appearance;
     if (!pageStyle) {
       pageStyle = document.createElement('style');
       pageStyle.id = 'oblivion-page-style';
       document.head.append(pageStyle);
     }
-    const dark =
-      a.mode === 'dark' ||
-      (a.mode === 'system' && matchMedia('(prefers-color-scheme:dark)').matches);
-    const accent = /^#[0-9a-f]{6}$/i.test(a.accent) ? a.accent : '#c6f36b';
-    const font = ['system-ui', 'Georgia', 'monospace'].includes(a.font) ? a.font : 'system-ui';
-    const background = /^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(a.background)
-      ? a.background
-      : '';
-    pageStyle.textContent =
-      (a.mode !== 'original'
-        ? `body{font-family:${font}!important;font-size:${a.size}px!important;background-color:${dark ? '#101218' : '#f5f6f9'}!important;color:${dark ? '#e1e5ee' : '#212632'}!important} ${dark ? '.content,.content-with-cd,.content-with-cd-wide,.chat,.chat-header,.chat-detail,.chat-form,.tc-item,.panel,.modal-content,.dropdown-menu{background-color:#191c25!important;color:#dce1ed!important;border-color:#343a48!important}input,textarea,select{background-color:#13151d!important;color:#e1e5ee!important;border-color:#353b49!important}.tc-item:hover{background-color:#242936!important}' : ''} .btn-primary{background-color:${accent}!important;border-color:${accent}!important;color:${dark ? '#151b0e' : '#fff'}!important}`
-        : '') +
-      (background
-        ? `body{background-image:url("${background}")!important;background-size:cover!important;background-attachment:fixed!important}`
-        : '') +
-      (a.hideBalance
-        ? '.balance,.badge-balance,.user-link-balance{filter:blur(8px)!important}'
-        : '') +
-      (a.density === 'compact'
-        ? '.tc-item{padding-top:7px!important;padding-bottom:7px!important}.chat-msg-item{margin-bottom:4px!important}'
-        : '') +
-      '\n' +
-      String(a.css || '')
-        .replace(/@import[^;]+;/gi, '')
-        .replace(/url\([^)]*\)/gi, 'none');
-    host.style.setProperty('--accent', accent);
+    const resolved = appearanceDraft
+      ? T.resolve(appearanceDraft, systemTheme.matches)
+      : T.resolve(a, systemTheme.matches);
+    const appearance = appearanceDraft || a;
+    if (globalThis.OblivionAppearance) {
+      if (appearanceDraft) OblivionAppearance.preview(appearance);
+      else OblivionAppearance.restore(appearance);
+    } else T.apply(document, appearance, systemTheme.matches);
+    const t = resolved.tokens;
+    const ui = resolved.active ? t : T.resolve(T.preset('orbit')).tokens;
+    for (const [key, value] of Object.entries({
+      bg: ui.bg,
+      surface: ui.surface,
+      raised: ui.raised,
+      text: ui.text,
+      line: ui.border,
+      muted: ui.muted,
+      accent: ui.accent,
+      'accent-ink': ui.ink,
+      hover: ui.hover,
+      soft: ui.soft,
+      link: ui.link,
+      danger: T.readable('#dc5353', ui.raised),
+      success: T.readable('#59ac68', ui.surface),
+      warning: T.readable('#c48a33', ui.surface),
+    }))
+      host.style.setProperty('--' + key, value);
+    pageStyle.textContent = '';
+    const accent = t.accent;
     if (a.cursor && !cursor && !matchMedia('(prefers-reduced-motion:reduce)').matches) {
       cursor = document.createElement('div');
       cursor.style.cssText =
@@ -1377,6 +1600,7 @@
         ';border-radius:50%;z-index:2147483645;transform:translate(-50%,-50%)';
       document.documentElement.append(cursor);
     }
+    if (cursor) cursor.style.borderColor = accent;
     if (!a.cursor && cursor) {
       cursor.remove();
       cursor = null;

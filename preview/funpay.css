@@ -1,0 +1,254 @@
+/* Original reduced layout fixture. Not a copy of the site's stylesheet. */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #fff;
+  color: #333;
+  font: 15px system-ui;
+  line-height: 1.5;
+}
+.container {
+  max-width: 1140px;
+  margin: auto;
+  padding: 0 24px;
+}
+.navbar-default {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 76px;
+}
+.navigation > b {
+  font-size: 22px;
+}
+.navigation small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #999;
+}
+.navbar-nav {
+  display: flex;
+  list-style: none;
+  gap: 26px;
+  padding: 0;
+  margin-left: auto;
+}
+.navbar-nav a {
+  color: #777;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge {
+  background: #eee;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.breadcrumb {
+  margin: 26px 0;
+  font-size: 13px;
+}
+.page-header {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+}
+h1 {
+  font-size: 36px;
+  letter-spacing: -1px;
+  margin: 5px 0 12px;
+}
+h2 {
+  font-size: 22px;
+  margin: 0;
+}
+.eyebrow {
+  letter-spacing: 2px;
+  font-size: 10px;
+  color: #777;
+}
+.text-muted,
+.block-info {
+  color: #777;
+}
+.block-info {
+  max-width: 770px;
+}
+.counter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0 36px;
+}
+.counter-item {
+  background: #f5f5f5;
+  color: #428bca;
+  padding: 12px 22px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.counter-item.active {
+  background: #222;
+  color: #fff;
+}
+.counter-value {
+  font-size: 12px;
+  margin-left: 5px;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.section-heading p {
+  font-size: 13px;
+  margin: 5px 0 16px;
+}
+.showcase-filters {
+  display: flex;
+  gap: 12px;
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 10px;
+  margin: 12px 0;
+}
+.form-control {
+  background: white;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font: inherit;
+  min-width: 0;
+}
+.showcase-filters input {
+  flex: 1;
+}
+.btn {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font: inherit;
+  cursor: pointer;
+}
+.btn-primary {
+  background: #428bca;
+  color: #fff;
+  border-color: #428bca;
+}
+.btn-default {
+  background: #fff;
+  color: #333;
+}
+.tc {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+.tc-header,
+.tc-item {
+  display: table-row;
+  color: #333;
+  text-decoration: none;
+}
+.tc-header > div,
+.tc-item > div {
+  display: table-cell;
+  border-bottom: 1px solid #ddd;
+  padding: 20px 16px;
+  vertical-align: middle;
+}
+.tc-header > div {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #777;
+}
+.tc-header > div:first-child {
+  width: 55%;
+}
+.tc-item small {
+  font-size: 12px;
+}
+.tc-price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.chat {
+  margin: 30px 0;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.chat-header,
+.chat-message-list,
+.chat-form {
+  padding: 16px;
+}
+.chat-header {
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+.chat-message-list p {
+  margin: 6px 0;
+}
+.chat-msg-date {
+  font-size: 11px;
+  color: #999;
+}
+.chat-form {
+  display: flex;
+  gap: 12px;
+  background: #fafafa;
+}
+.chat-form input {
+  flex: 1;
+}
+.cd-container {
+  position: fixed;
+  width: 800px;
+  height: 800px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #fa8c72, #1b82ad);
+  top: 140px;
+  right: -550px;
+  opacity: 0.4;
+  z-index: -1;
+}
+button:disabled {
+  opacity: 0.6;
+}
+@media (max-width: 800px) {
+  .navbar-nav {
+    gap: 10px;
+    font-size: 12px;
+  }
+  .navigation {
+    flex-wrap: wrap;
+    padding: 12px 24px;
+    gap: 10px;
+  }
+  .navigation > .form-control {
+    display: none;
+  }
+  .navbar-nav {
+    margin: 0;
+  }
+  .tc-item > div {
+    padding: 12px 7px;
+  }
+  .showcase-filters {
+    flex-wrap: wrap;
+  }
+  .container {
+    padding: 0 16px;
+  }
+}

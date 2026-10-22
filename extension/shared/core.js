@@ -7,6 +7,12 @@
     automationAccount: '',
     appearance: {
       mode: 'original',
+      theme: 'orbit',
+      preset: 'orbit',
+      atmosphere: 'none',
+      hideDecor: true,
+      radius: 12,
+      backgroundShade: 82,
       accent: '#c6f36b',
       font: 'system-ui',
       size: 14,
@@ -18,6 +24,8 @@
       sound: '',
       volume: 0.7,
     },
+    favoriteThemes: [],
+    savedThemes: [],
     templates: [],
     notes: {},
     lotNotes: {},
@@ -63,6 +71,30 @@
     out.bump.interval = Math.max(5, Math.min(1440, Number(out.bump.interval) || 15));
     out.appearance.volume = Math.max(0, Math.min(1, Number(out.appearance.volume) || 0));
     out.appearance.size = Math.max(11, Math.min(22, Number(out.appearance.size) || 14));
+    out.appearance.radius = Math.max(
+      0,
+      Math.min(24, Number.isFinite(out.appearance.radius) ? out.appearance.radius : 12),
+    );
+    out.appearance.backgroundShade = Math.max(
+      40,
+      Math.min(95, Number(out.appearance.backgroundShade) || 82),
+    );
+    if (!['none', 'orbit', 'aurora', 'glow', 'grid'].includes(out.appearance.atmosphere))
+      out.appearance.atmosphere = 'none';
+    out.favoriteThemes = [
+      ...new Set(out.favoriteThemes.filter((id) => typeof id === 'string')),
+    ].slice(0, 50);
+    if (out.savedThemes.length > 12) throw new Error('Можно сохранить до 12 своих тем.');
+    out.savedThemes = out.savedThemes
+      .filter(
+        (t) =>
+          plain(t) && typeof t.id === 'string' && typeof t.name === 'string' && plain(t.appearance),
+      )
+      .map((t) => ({
+        id: t.id,
+        name: t.name.slice(0, 60),
+        appearance: normalize({ appearance: t.appearance }).appearance,
+      }));
     if (!['system', 'dark', 'light', 'original'].includes(out.appearance.mode))
       out.appearance.mode = 'system';
     if (!/^#[0-9a-f]{6}$/i.test(out.appearance.accent)) out.appearance.accent = '#c6f36b';
