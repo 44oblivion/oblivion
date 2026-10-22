@@ -4,10 +4,27 @@
   const ext = typeof chrome !== 'undefined' ? chrome : browser;
   const call = (command, payload = {}) =>
     new Promise((resolve, reject) =>
-      ext.runtime.sendMessage({ app: 'oblivion', command, payload }, (response) =>
-        response?.ok
-          ? resolve(response.result)
-          : reject(new Error(response?.error || 'Oblivion недоступен.')),
+      ext.runtime.sendMessage(
+        {
+          app: 'oblivion',
+          command,
+          payload,
+          accountId: (() => {
+            try {
+              return String(
+                JSON.parse(
+                  document.querySelector('[data-app-data]')?.getAttribute('data-app-data') || '{}',
+                ).userId || '',
+              );
+            } catch {
+              return '';
+            }
+          })(),
+        },
+        (response) =>
+          response?.ok
+            ? resolve(response.result)
+            : reject(new Error(response?.error || 'Oblivion недоступен.')),
       ),
     );
   function tool(label, parent, action) {

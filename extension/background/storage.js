@@ -1,5 +1,6 @@
 'use strict';
 const api = typeof chrome !== 'undefined' ? chrome : browser;
+let preferenceQueue = Promise.resolve();
 const Store = {
   read(keys) {
     return new Promise((resolve, reject) =>
@@ -19,18 +20,24 @@ const Store = {
     const { preferences } = await this.read('preferences');
     return OblivionCore.normalize(preferences || {});
   },
-  async update(patch) {
-    const value = OblivionCore.normalize(OblivionCore.merge(await this.settings(), patch));
-    if (typeof Engine !== 'undefined' && Engine.pauseRequested && Engine.running) {
-      value.bump.enabled = false;
-      value.autoRestore.enabled = false;
-      value.rules = value.rules.map((r) => ({ ...r, enabled: false }));
-      value.inventories = value.inventories.map((i) => ({ ...i, enabled: false }));
-      value.integrations.telegram.enabled = false;
-      value.integrations.discord.enabled = false;
-    }
-    await this.write({ preferences: value });
-    return value;
+  update(patch) {
+    const job = preferenceQueue
+      .catch(() => {})
+      .then(async () => {
+        const value = OblivionCore.normalize(OblivionCore.merge(await this.settings(), patch));
+        if (typeof Engine !== 'undefined' && Engine.pauseRequested && Engine.running) {
+          value.bump.enabled = false;
+          value.autoRestore.enabled = false;
+          value.rules = value.rules.map((r) => ({ ...r, enabled: false }));
+          value.inventories = value.inventories.map((i) => ({ ...i, enabled: false }));
+          value.integrations.telegram.enabled = false;
+          value.integrations.discord.enabled = false;
+        }
+        await this.write({ preferences: value });
+        return value;
+      });
+    preferenceQueue = job;
+    return job;
   },
   async log(kind, message) {
     const { journal = [] } = await this.read('journal');

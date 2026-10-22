@@ -3,6 +3,7 @@
   'use strict';
   const defaults = () => ({
     version: 1,
+    automationAccount: '',
     appearance: {
       mode: 'original',
       accent: '#c6f36b',
@@ -268,6 +269,7 @@
   }
   function redact(settings) {
     const out = structuredClone(settings);
+    out.automationAccount = '';
     out.ai.key = '';
     out.ai.consent = false;
     out.integrations.telegram.token = '';

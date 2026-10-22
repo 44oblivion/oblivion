@@ -146,6 +146,13 @@ const Engine = {
         settings.integrations.discord.enabled;
       if (!active) return;
       const me = await FunPay.identity(true);
+      if (settings.automationAccount !== me.id) {
+        await Store.log(
+          'pause',
+          'Аккаунт FunPay изменился. Заново сохраните настройки автоматизации из нужного аккаунта.',
+        );
+        return;
+      }
       const { automation = {} } = await Store.read('automation');
       const state = automation[me.id] || {
         messages: {},

@@ -1,5 +1,6 @@
 'use strict';
 let settingsQueue = Promise.resolve();
+let timerQueue = Promise.resolve();
 const mutateSettings = (patch) => {
   const job = settingsQueue.catch(() => {}).then(() => Store.update(patch));
   settingsQueue = job;
@@ -54,21 +55,27 @@ const commands = {
       (r) => r.owner === me.id && r.buyerId === String(user),
     );
   },
-  async timer({ order, action }) {
-    if (!/^[a-z0-9_-]+$/i.test(String(order))) throw new Error('Некорректный заказ.');
-    const me = await FunPay.identity();
-    const { timers = {} } = await Store.read('timers');
-    const key = me.id + ':' + order;
-    const value = timers[key] || { started: 0, elapsed: 0 };
-    if (action === 'toggle') {
-      if (value.started) {
-        value.elapsed += Math.max(0, Date.now() - value.started);
-        value.started = 0;
-      } else value.started = Date.now();
-      timers[key] = value;
-      await Store.write({ timers });
-    }
-    return value;
+  timer({ order, action }) {
+    const job = timerQueue
+      .catch(() => {})
+      .then(async () => {
+        if (!/^[a-z0-9_-]+$/i.test(String(order))) throw new Error('Некорректный заказ.');
+        const me = await FunPay.identity();
+        const { timers = {} } = await Store.read('timers');
+        const key = me.id + ':' + order;
+        const value = timers[key] || { started: 0, elapsed: 0 };
+        if (action === 'toggle') {
+          if (value.started) {
+            value.elapsed += Math.max(0, Date.now() - value.started);
+            value.started = 0;
+          } else value.started = Date.now();
+          timers[key] = value;
+          await Store.write({ timers });
+        }
+        return value;
+      });
+    timerQueue = job;
+    return job;
   },
   async lot({ id }) {
     return FunPay.lot(id);
@@ -135,6 +142,43 @@ const commands = {
     return mutateSettings(prefs);
   },
 };
+const accountCommands = new Set([
+  'send',
+  'messages',
+  'chats',
+  'lot',
+  'lotSave',
+  'categories',
+  'raise',
+  'sync',
+  'ledger',
+  'buyerHistory',
+  'timer',
+  'cycle',
+  'resolveDelivery',
+]);
+async function dispatch(message, sender) {
+  const payload = message.payload || {};
+  const automating =
+    message.command === 'settings' &&
+    ['bump', 'rules', 'inventories', 'autoRestore', 'integrations'].some((key) =>
+      Object.hasOwn(payload.patch || {}, key),
+    );
+  if (sender.tab && (accountCommands.has(message.command) || automating)) {
+    const expected = String(message.accountId || '');
+    if (!/^\d+$/.test(expected) || expected === '0')
+      throw new Error(
+        'Не удалось определить аккаунт страницы. Войдите в FunPay и перезагрузите вкладку.',
+      );
+    const actual = await FunPay.identity(true);
+    if (actual.id !== expected)
+      throw new Error(
+        'Аккаунт вкладки отличается от фоновой сессии. Контейнеры и приватные окна в этой версии не поддерживаются.',
+      );
+    if (automating) payload.patch.automationAccount = actual.id;
+  }
+  return commands[message.command](payload);
+}
 api.runtime.onMessage.addListener((message, sender, respond) => {
   if (sender.id !== api.runtime.id) return false;
   if (
@@ -145,7 +189,7 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
     return false;
   if (message?.app !== 'oblivion' || !Object.hasOwn(commands, message.command)) return false;
   Promise.resolve()
-    .then(() => commands[message.command](message.payload || {}))
+    .then(() => dispatch(message, sender))
     .then((result) => respond({ ok: true, result }))
     .catch((error) => respond({ ok: false, error: error.message || 'Операция не выполнена.' }));
   return true;

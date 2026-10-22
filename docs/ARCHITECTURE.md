@@ -8,6 +8,6 @@ Oblivion is an original Firefox Manifest V2 WebExtension. A persistent backgroun
 
 `background/main.js` accepts only own-extension messages from extension URLs or allowed FunPay origins, checks own command names, and serializes preference edits. `content/workspace.js` implements the eight-page workspace. `content/page-tools.js` contains small original tools attached to native pages. The popup opens the workspace or pauses jobs.
 
-External credentials are local, destinations are fixed, and external permissions/data-consent are checked before requests. The runtime has no npm dependencies. All npm dependencies are development tools. Workflow actions are pinned to immutable commits.
+External credentials are local, destinations are fixed, and external permissions/data-consent are checked before requests. Account-bound commands verify the page user against the background session before work; automation is bound to the account that enabled it. A mismatch fails closed. Preference and timer writes are serialized. The runtime has no npm dependencies. All npm dependencies are development tools. Workflow actions are pinned to immutable commits.
 
 This design does not turn FunPay's mutable website contract into a stable API. Fixtures and smoke tests complement, rather than replace, authenticated end-to-end checks.

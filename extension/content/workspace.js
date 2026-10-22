@@ -4,14 +4,27 @@
   if (document.querySelector('#oblivion-workspace')) return;
   const ext = typeof chrome !== 'undefined' ? chrome : browser;
   const C = OblivionCore;
+  function pageAccount() {
+    try {
+      return String(
+        JSON.parse(document.querySelector('[data-app-data]')?.getAttribute('data-app-data') || '{}')
+          .userId || '',
+      );
+    } catch {
+      return '';
+    }
+  }
   const request = (command, payload = {}) =>
     new Promise((resolve, reject) => {
-      ext.runtime.sendMessage({ app: 'oblivion', command, payload }, (response) => {
-        if (ext.runtime.lastError) reject(new Error(ext.runtime.lastError.message));
-        else if (!response?.ok)
-          reject(new Error(response?.error || 'Фоновая страница недоступна.'));
-        else resolve(response.result);
-      });
+      ext.runtime.sendMessage(
+        { app: 'oblivion', command, payload, accountId: pageAccount() },
+        (response) => {
+          if (ext.runtime.lastError) reject(new Error(ext.runtime.lastError.message));
+          else if (!response?.ok)
+            reject(new Error(response?.error || 'Фоновая страница недоступна.'));
+          else resolve(response.result);
+        },
+      );
     });
   const e = (value) =>
     String(value ?? '').replace(
